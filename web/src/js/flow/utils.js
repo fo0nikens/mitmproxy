@@ -1,12 +1,11 @@
-var _ = require("lodash");
-var $ = require("jquery");
+import _ from "lodash"
 
 var defaultPorts = {
     "http": 80,
     "https": 443
 };
 
-var MessageUtils = {
+export var MessageUtils = {
     getContentType: function (message) {
         var ct = this.get_first_header(message, /^Content-Type$/i);
         if(ct){
@@ -44,39 +43,31 @@ var MessageUtils = {
         }
         return false;
     },
-    getContentURL: function (flow, message) {
+    getContentURL: function (flow, message, view) {
         if (message === flow.request) {
             message = "request";
         } else if (message === flow.response) {
             message = "response";
         }
-        return "/flows/" + flow.id + "/" + message + "/content";
-    },
-    getContent: function (flow, message) {
-        var url = MessageUtils.getContentURL(flow, message);
-        return $.get(url);
+        return `./flows/${flow.id}/${message}/` + (view ? `content/${view}.json` : 'content.data');
     }
 };
 
-var RequestUtils = _.extend(MessageUtils, {
-    pretty_host: function (request) {
-        //FIXME: Add hostheader
-        return request.host;
-    },
+export var RequestUtils = _.extend(MessageUtils, {
     pretty_url: function (request) {
         var port = "";
         if (defaultPorts[request.scheme] !== request.port) {
             port = ":" + request.port;
         }
-        return request.scheme + "://" + this.pretty_host(request) + port + request.path;
+        return request.scheme + "://" + request.pretty_host + port + request.path;
     }
 });
 
-var ResponseUtils = _.extend(MessageUtils, {});
+export var ResponseUtils = _.extend(MessageUtils, {});
 
 
 var parseUrl_regex = /^(?:(https?):\/\/)?([^\/:]+)?(?::(\d+))?(\/.*)?$/i;
-var parseUrl = function (url) {
+export var parseUrl = function (url) {
     //there are many correct ways to parse a URL,
     //however, a mitmproxy user may also wish to generate a not-so-correct URL. ;-)
     var parts = parseUrl_regex.exec(url);
@@ -109,22 +100,6 @@ var parseUrl = function (url) {
 
 
 var isValidHttpVersion_regex = /^HTTP\/\d+(\.\d+)*$/i;
-var isValidHttpVersion = function (httpVersion) {
+export var isValidHttpVersion = function (httpVersion) {
     return isValidHttpVersion_regex.test(httpVersion);
-};
-
-var parseHttpVersion = function (httpVersion) {
-    httpVersion = httpVersion.replace("HTTP/", "").split(".");
-    return _.map(httpVersion, function (x) {
-        return parseInt(x);
-    });
-};
-
-module.exports = {
-    ResponseUtils: ResponseUtils,
-    RequestUtils: RequestUtils,
-    MessageUtils: MessageUtils,
-    parseUrl: parseUrl,
-    parseHttpVersion: parseHttpVersion,
-    isValidHttpVersion: isValidHttpVersion
 };
